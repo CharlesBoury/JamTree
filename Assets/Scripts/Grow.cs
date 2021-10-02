@@ -14,8 +14,7 @@ public class Grow : MonoBehaviour
 
     [Header("Random Settings")]
     public int seed = 42;
-    public float rotationRangeZ = 20f;
-    public float rotationRangeY = 20f;
+    public Vector3 rotationRange = new Vector3(50f, 50f, 50f);
     public float initRadius = 1f;
     public float scaleRadius = 0.8f;
     public float initLength = 1f;
@@ -101,9 +100,9 @@ public class Grow : MonoBehaviour
         o.transform.parent = b.trans;
         o.transform.localPosition = new Vector3(0, b.length, 0);
         o.transform.localEulerAngles = new Vector3(
-            0, 
-            rotationRangeY* (Random.value - 0.5f), 
-            rotationRangeZ* (Random.value - 0.5f));
+            rotationRange.x* (Random.value - 0.5f), 
+            rotationRange.y* (Random.value - 0.5f), 
+            rotationRange.z* (Random.value - 0.5f));
 
         numberOfBranches++;
         
