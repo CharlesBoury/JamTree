@@ -55,6 +55,7 @@ public class Grow : MonoBehaviour
         Deform(trunk, initRadius, initLength);
         trunk.transform.parent = transform;
         Branch trunkBranch = new Branch(trunk.transform, initRadius, initLength, 1.0f);
+        colorBranchVertices(trunkBranch, recurseCount, recurseCount);
         numberOfBranches ++;
 
         // create branches
@@ -65,11 +66,11 @@ public class Grow : MonoBehaviour
         Debug.Log("numberOfBranches: " + numberOfBranches);
     }
 
-    float RecurseGrow(int remainingCount, Branch b) {
+    float RecurseGrow(int remainingCount, Branch previsousBranch) {
         float weightSum = 0.0f;
         if(remainingCount > 0) {
             remainingCount--;
-            Branch newBranch = GrowBranch(b);
+            Branch newBranch = GrowBranch(previsousBranch);
 
             if (Random.value < chanceOfBourgeon)
                 weightSum += RecurseGrow(remainingCount, newBranch);
@@ -77,10 +78,11 @@ public class Grow : MonoBehaviour
                 weightSum += RecurseGrow(remainingCount, newBranch);
             if (Random.value < chanceOfBourgeon * 0.1f)
                 weightSum += RecurseGrow(remainingCount, newBranch);
-            b.weight += weightSum;
-            colorBranchVertices(b, maxWeight);
-            return b.weight;
+            newBranch.weight += weightSum;
+            colorBranchVertices(newBranch, remainingCount, recurseCount);
+            return newBranch.weight;
         } else {
+
             return 0.0f;
         }
         
@@ -137,19 +139,19 @@ public class Grow : MonoBehaviour
         o.GetComponent<MeshFilter>().mesh = deformedMesh;
 	}
 
-    void colorBranchVertices(Branch b, float maxWeight) 
+    void colorBranchVertices(Branch b, int remainingCount, int maxCount) 
     {
         Mesh originalMesh = b.trans.gameObject.GetComponent<MeshFilter>().sharedMesh;
         Vector3[] originalVertices = originalMesh.vertices;
         Color[] colors = new Color[originalVertices.Length];
         for (int i = 0; i < originalVertices.Length; i++) {
-            if(b.weight > maxWeight)
-                colors[i] = new Color(0.0f, 0.0f, 0.0f);
-            else {
-                float movability = 1.0f - b.weight / maxWeight;
-                float factor = 0.5f * movability + 0.5f * (movability * originalVertices[i].y / b.length);
-                colors[i] = new Color(factor, 0.0f, 0.0f);
-            }
+            float colorLeaf = 1.0f - remainingCount / (1.0f * maxCount);
+            float colorBase = 1.0f - (remainingCount+1) / (1.0f * maxCount);
+            if (colorBase>1.0f) colorBase=1.0f;
+            //float movability = 1.0f - b.weight / maxWeight;
+            float relativeY = originalVertices[i].y / b.length;
+            float factor =(1.0f - relativeY) * colorBase + (colorLeaf * relativeY);
+            colors[i] = new Color(factor, 0.0f, 0.0f);
         }
 
         // assign the array of colors to the Mesh.
