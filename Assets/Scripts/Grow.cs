@@ -9,17 +9,36 @@ public class Grow : MonoBehaviour
 {
     public GameObject Segment;
     public int recurseCount = 2;
-    public float initRadius = 1f;
-    public float scaleRadius = 0.8f;
+    float minLength = 0.2f;
+    float minRadius = 0.1f;
 
     [Header("Random Settings")]
     public int seed = 42;
     public float rotationRangeZ = 20f;
     public float rotationRangeY = 20f;
+    public float initRadius = 1f;
+    public float scaleRadius = 0.8f;
+    public float initLength = 1f;
+    public float scaleLength = 0.9f;
     [Range(0f, 1f)] public float chanceOfBourgeon = 0.9f;
 
     int numberOfBranches;
     
+    public class Branch 
+    {
+        public Transform t;
+        public float radius;
+        public float length;
+        public float weight;
+
+        public Branch(Transform ct, float cradius, float clength, float cweight) {
+            t = ct;
+            radius = cradius;
+            length = clength;
+            weight = cweight;
+        }
+    }
+
     void OnEnable()
     {
         GrowTree();
@@ -32,44 +51,58 @@ public class Grow : MonoBehaviour
 
         // create trunk at 000
         GameObject trunk = Instantiate(Segment);
+        Deform(trunk, initRadius, initLength);
         trunk.transform.parent = transform;
+        Branch trunkBranch = new Branch(trunk.transform, initRadius, initLength, 1.0f);
         numberOfBranches ++;
 
         // create branches
         Random.InitState(seed);
-        RecurseGrow(recurseCount-1, trunk.transform, initRadius);
-
+        RecurseGrow(recurseCount-1, trunkBranch);
+        Debug.Log("weight of trunk: " + trunkBranch.weight + " Tons");
         Debug.Log("numberOfBranches: " + numberOfBranches);
     }
 
-    void RecurseGrow(int remainingCount, Transform t, float radius) {
+    float RecurseGrow(int remainingCount, Branch b) {
+        float weightSum = 0.0f;
         if(remainingCount > 0) {
             remainingCount--;
-            radius = radius * scaleRadius;
+            Branch newBranch = GrowBranch(b);
 
-            Transform o = GrowBranch(t, radius);
             if (Random.value < chanceOfBourgeon)
-                RecurseGrow(remainingCount, o, radius);
+                weightSum += RecurseGrow(remainingCount, newBranch);
             if (Random.value < chanceOfBourgeon * 0.6667f)
-                RecurseGrow(remainingCount, o, radius);
+                weightSum += RecurseGrow(remainingCount, newBranch);
             if (Random.value < chanceOfBourgeon * 0.1f)
-                RecurseGrow(remainingCount, o, radius);
-        } 
+                weightSum += RecurseGrow(remainingCount, newBranch);
+            b.weight += weightSum;
+            return b.weight;
+        } else {
+            return 0.0f;
+        }
+        
     }
 
-    Transform GrowBranch(Transform t, float radius) {
-        //GameObject o = PrefabUtility.InstantiatePrefab(Segment) as GameObject;
+    Branch GrowBranch(Branch b) {
         GameObject o = Instantiate(Segment);
-        Deform(o, radius);
-        o.transform.parent = t;
-        o.transform.localPosition = new Vector3(0, 1f, 0);
+
+        float radius = b.radius * scaleRadius;
+        float length = b.length * scaleLength;
+        float weight = 0.2f*0.2f*radius*radius * 2 * 3.14f * length;
+        if(radius < minRadius) {radius = minRadius;}
+        if(length < minLength) {length = minLength;}
+
+        Deform(o, radius, length);
+        o.transform.parent = b.t;
+        o.transform.localPosition = new Vector3(0, b.length, 0);
         o.transform.localEulerAngles = new Vector3(
             0, 
             rotationRangeY* (Random.value - 0.5f), 
             rotationRangeZ* (Random.value - 0.5f));
 
         numberOfBranches++;
-        return o.transform;
+        
+        return new Branch(o.transform, radius, length, weight);
     }
 
 
@@ -82,14 +115,14 @@ public class Grow : MonoBehaviour
         }
     }
 
-	void Deform(GameObject o, float radius) {
+	void Deform(GameObject o, float radius, float length) {
 
 		Mesh originalMesh = o.GetComponent<MeshFilter>().sharedMesh;
         Vector3[] originalVertices = originalMesh.vertices;
 		Vector3[] displacedVertices = new Vector3[originalVertices.Length];
 		
 		for (int i = 0; i < originalVertices.Length; i++) {
-			displacedVertices[i] = CalculateDeformation(originalVertices[i], radius, radius * scaleRadius);
+			displacedVertices[i] = CalculateDeformation(originalVertices[i], radius, radius * scaleRadius, length);
 		}
 		
         Mesh deformedMesh = new Mesh();
@@ -98,7 +131,6 @@ public class Grow : MonoBehaviour
         deformedMesh.uv = originalMesh.uv;
         deformedMesh.RecalculateNormals();
         o.GetComponent<MeshFilter>().mesh = deformedMesh;
-		
 	}
 
     // Useful for later, not used yet
@@ -108,9 +140,9 @@ public class Grow : MonoBehaviour
 	}
 
 
-	Vector3 CalculateDeformation(Vector3 position, float radiusMax, float radiusMin) {
+	Vector3 CalculateDeformation(Vector3 position, float radiusMax, float radiusMin, float length) {
 		float scale = (1.0f-position.y) * radiusMax + position.y * radiusMin;
-		return new Vector3(scale * position.x,  position.y, scale * position.z);
+		return new Vector3(scale * position.x,  length * position.y, scale * position.z);
 	}
 }
 
