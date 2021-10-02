@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
+
+
 
 [ExecuteInEditMode]
 public class Grow : MonoBehaviour
@@ -10,11 +13,10 @@ public class Grow : MonoBehaviour
     // Start is called before the first frame update
     void OnEnable()
     {
-        DestroyChildren();
-        RecurseGrow(recurseCount, transform);
+        GrowTree();
     }
-
-    void Update()
+    
+    public void GrowTree() 
     {
         DestroyChildren();
         RecurseGrow(recurseCount, transform);
@@ -36,5 +38,20 @@ public class Grow : MonoBehaviour
             GameObject o = Instantiate(Segment, t);
             RecurseGrow(remainingCount, o.transform);
         } 
+    }
+}
+
+[CustomEditor(typeof(Grow))]
+public class GrowEditor: Editor
+{
+     public override void OnInspectorGUI() {
+        DrawDefaultInspector();
+        if(GUILayout.Button("Grow!")) {
+            Debug.Log("It's alive: " + target.name);
+            Grow GrowScript = ((MonoBehaviour)target).gameObject.GetComponent<Grow>();
+            GrowScript.GrowTree();
+            //Grow.GrowTree();
+        }
+        
     }
 }
