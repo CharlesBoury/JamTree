@@ -50,7 +50,7 @@ public class Grow : MonoBehaviour
         numberOfBranches = 0;
 
         // create trunk at 000
-        GameObject trunk = Instantiate(Segment);
+        GameObject trunk = Instantiate(Segment, transform);
         Deform(trunk, initRadius, initLength);
         trunk.transform.parent = transform;
         Branch trunkBranch = new Branch(trunk.transform, initRadius, initLength, 1.0f);
@@ -100,9 +100,9 @@ public class Grow : MonoBehaviour
         o.transform.parent = b.trans;
         o.transform.localPosition = new Vector3(0, b.length, 0);
         o.transform.localEulerAngles = new Vector3(
-            rotationRange.x* (Random.value - 0.5f), 
-            rotationRange.y* (Random.value - 0.5f), 
-            rotationRange.z* (Random.value - 0.5f));
+            rotationRange.x * (Random.value - 0.5f), 
+            rotationRange.y * (Random.value - 0.5f), 
+            rotationRange.z * (Random.value - 0.5f));
 
         numberOfBranches++;
         
