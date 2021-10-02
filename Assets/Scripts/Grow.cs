@@ -20,19 +20,20 @@ public class Grow : MonoBehaviour
     public float scaleRadius = 0.8f;
     public float initLength = 1f;
     public float scaleLength = 0.9f;
+    public float maxWeight = 3f;
     [Range(0f, 1f)] public float chanceOfBourgeon = 0.9f;
 
     int numberOfBranches;
     
     public class Branch 
     {
-        public Transform t;
+        public Transform trans;
         public float radius;
         public float length;
         public float weight;
 
         public Branch(Transform ct, float cradius, float clength, float cweight) {
-            t = ct;
+            trans = ct;
             radius = cradius;
             length = clength;
             weight = cweight;
@@ -60,6 +61,7 @@ public class Grow : MonoBehaviour
         Random.InitState(seed);
         RecurseGrow(recurseCount-1, trunkBranch);
         Debug.Log("weight of trunk: " + trunkBranch.weight + " Tons");
+        float totalWeight = trunkBranch.weight + 1.0f;
         Debug.Log("numberOfBranches: " + numberOfBranches);
     }
 
@@ -76,6 +78,7 @@ public class Grow : MonoBehaviour
             if (Random.value < chanceOfBourgeon * 0.1f)
                 weightSum += RecurseGrow(remainingCount, newBranch);
             b.weight += weightSum;
+            colorBranchVertices(b, maxWeight);
             return b.weight;
         } else {
             return 0.0f;
@@ -93,7 +96,7 @@ public class Grow : MonoBehaviour
         if(length < minLength) {length = minLength;}
 
         Deform(o, radius, length);
-        o.transform.parent = b.t;
+        o.transform.parent = b.trans;
         o.transform.localPosition = new Vector3(0, b.length, 0);
         o.transform.localEulerAngles = new Vector3(
             0, 
@@ -115,7 +118,8 @@ public class Grow : MonoBehaviour
         }
     }
 
-	void Deform(GameObject o, float radius, float length) {
+	void Deform(GameObject o, float radius, float length) 
+    {
 
 		Mesh originalMesh = o.GetComponent<MeshFilter>().sharedMesh;
         Vector3[] originalVertices = originalMesh.vertices;
@@ -132,6 +136,25 @@ public class Grow : MonoBehaviour
         deformedMesh.RecalculateNormals();
         o.GetComponent<MeshFilter>().mesh = deformedMesh;
 	}
+
+    void colorBranchVertices(Branch b, float maxWeight) 
+    {
+        Mesh originalMesh = b.trans.gameObject.GetComponent<MeshFilter>().sharedMesh;
+        Vector3[] originalVertices = originalMesh.vertices;
+        Color[] colors = new Color[originalVertices.Length];
+        for (int i = 0; i < originalVertices.Length; i++) {
+            if(b.weight > maxWeight)
+                colors[i] = new Color(0.0f, 0.0f, 0.0f);
+            else {
+                float movability = 1.0f - b.weight / maxWeight;
+                float factor = 0.5f * movability + 0.5f * (movability * originalVertices[i].y / b.length);
+                colors[i] = new Color(factor, 0.0f, 0.0f);
+            }
+        }
+
+        // assign the array of colors to the Mesh.
+        originalMesh.colors = colors;
+    }
 
     // Useful for later, not used yet
 	Vector2 PolarFromPosition(Vector3 position) {
