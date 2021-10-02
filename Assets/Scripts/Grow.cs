@@ -8,6 +8,11 @@ public class Grow : MonoBehaviour
 {
     public GameObject Segment;
     public int recurseCount = 2;
+
+    [Header("Random Settings")]
+    public int seed = 42;
+    public float rotationRangeZ = 20f;
+    public float rotationRangeY = 20f;
     
     void OnEnable()
     {
@@ -22,6 +27,7 @@ public class Grow : MonoBehaviour
         trunk.transform.parent = transform;
 
         // create branches
+        Random.InitState(seed);
         RecurseGrow(recurseCount-1, trunk.transform);
     }
 
@@ -39,6 +45,10 @@ public class Grow : MonoBehaviour
         GameObject o = PrefabUtility.InstantiatePrefab(Segment) as GameObject;
         o.transform.parent = t;
         o.transform.localPosition = new Vector3(0, 1f, 0);
+        o.transform.localEulerAngles = new Vector3(
+            0, 
+            rotationRangeY* (Random.value - 0.5f), 
+            rotationRangeZ* (Random.value - 0.5f));
 
         return o.transform;
     }
