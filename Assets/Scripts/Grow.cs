@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 
 [ExecuteInEditMode]
- [RequireComponent (typeof (MeshFilter))]
+[RequireComponent (typeof (MeshFilter))]
 public class Grow : MonoBehaviour
 {
     public GameObject Segment;
@@ -16,6 +16,9 @@ public class Grow : MonoBehaviour
     public int seed = 42;
     public float rotationRangeZ = 20f;
     public float rotationRangeY = 20f;
+    [Range(0f, 1f)] public float chanceOfBourgeon = 0.9f;
+
+    int numberOfBranches;
     
     void OnEnable()
     {
@@ -25,23 +28,32 @@ public class Grow : MonoBehaviour
     public void GrowTree() {
     	DestroyChildren();
 
+        numberOfBranches = 0;
+
         // create trunk at 000
         GameObject trunk = Instantiate(Segment);
         trunk.transform.parent = transform;
+        numberOfBranches ++;
 
         // create branches
         Random.InitState(seed);
         RecurseGrow(recurseCount-1, trunk.transform, initRadius);
+
+        Debug.Log("numberOfBranches: " + numberOfBranches);
     }
 
     void RecurseGrow(int remainingCount, Transform t, float radius) {
         if(remainingCount > 0) {
             remainingCount--;
             radius = radius * scaleRadius;
-            Debug.Log(remainingCount);
 
             Transform o = GrowBranch(t, radius);
-            RecurseGrow(remainingCount, o, radius);
+            if (Random.value < chanceOfBourgeon)
+                RecurseGrow(remainingCount, o, radius);
+            if (Random.value < chanceOfBourgeon * 0.6667f)
+                RecurseGrow(remainingCount, o, radius);
+            if (Random.value < chanceOfBourgeon * 0.1f)
+                RecurseGrow(remainingCount, o, radius);
         } 
     }
 
@@ -56,6 +68,7 @@ public class Grow : MonoBehaviour
             rotationRangeY* (Random.value - 0.5f), 
             rotationRangeZ* (Random.value - 0.5f));
 
+        numberOfBranches++;
         return o.transform;
     }
 
@@ -107,11 +120,13 @@ public class GrowEditor: Editor
      public override void OnInspectorGUI() {
         DrawDefaultInspector();
         if(GUILayout.Button("Grow!")) {
-            Debug.Log("It's alive: " + target.name);
             Grow GrowScript = ((MonoBehaviour)target).gameObject.GetComponent<Grow>();
             GrowScript.GrowTree();
-            //Grow.GrowTree();
         }
-        
+        if(GUILayout.Button("Grow random!")) {
+            Grow GrowScript = ((MonoBehaviour)target).gameObject.GetComponent<Grow>();
+            GrowScript.seed = Random.Range(0, 100000);
+            GrowScript.GrowTree();
+        }
     }
 }
