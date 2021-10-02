@@ -14,7 +14,7 @@ public class Grow : MonoBehaviour
         GrowTree();
     }
 
-    void GrowTree() {
+    public void GrowTree() {
     	DestroyChildren();
 
         // create trunk at 000
